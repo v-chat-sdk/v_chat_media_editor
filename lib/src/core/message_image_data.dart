@@ -58,14 +58,10 @@ class MessageImageData {
     };
   }
 
-  factory MessageImageData.fromMap(
-    Map<String, dynamic> map, {
-    String? baseUrl,
-  }) {
+  factory MessageImageData.fromMap(Map<String, dynamic> map) {
     return MessageImageData(
       fileSource: VPlatformFile.fromMap(
-        map: map,
-        baseUrl: baseUrl,
+        map,
       ),
       width: map['width'] as int,
       height: map['height'] as int,
