@@ -12,3 +12,5 @@
 - Support Dart 3
 ## 1.2.1
 - upgrade packages
+## 2.0.0
+- Support Flutter V3.22
