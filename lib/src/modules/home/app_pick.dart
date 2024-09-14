@@ -19,27 +19,33 @@ abstract class VAppPick {
         final croppedFile = await ImageCropper().cropImage(
           sourcePath: img.fileLocalPath!,
           compressQuality: 70,
-          cropStyle: CropStyle.circle,
-          compressFormat: ImageCompressFormat.png,
-          aspectRatioPresets: [
-            CropAspectRatioPreset.square,
-            CropAspectRatioPreset.ratio3x2,
-            CropAspectRatioPreset.original,
-            CropAspectRatioPreset.ratio4x3,
-            CropAspectRatioPreset.ratio16x9
-          ],
           uiSettings: [
             AndroidUiSettings(
-              toolbarTitle: 'Crop It',
-              toolbarColor: Colors.white,
-              toolbarWidgetColor: Colors.black,
-              initAspectRatio: CropAspectRatioPreset.original,
-              lockAspectRatio: false,
+              toolbarTitle: 'Cropper',
+              toolbarColor: Colors.deepOrange,
+              toolbarWidgetColor: Colors.white,
+              cropStyle: CropStyle.circle,
+              aspectRatioPresets: [
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio16x9
+              ],
             ),
             IOSUiSettings(
-              title: 'Crop It',
+              title: 'Cropper',
+              cropStyle: CropStyle.circle,
+              aspectRatioPresets: [
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio16x9
+              ],
             ),
           ],
+          compressFormat: ImageCompressFormat.png,
         );
 
         if (croppedFile == null) {
@@ -68,78 +74,8 @@ abstract class VAppPick {
     return VPlatformFile.fromPath(fileLocalPath: file.path!);
   }
 
-  static Future<List<VPlatformFile>?> getImages() async {
-    isPicking = true;
-    final FilePickerResult? pickedFile = await FilePicker.platform
-        .pickFiles(type: FileType.image, allowMultiple: true);
-    isPicking = false;
-    if (pickedFile == null) return null;
-    return pickedFile.files.map((e) {
-      if (e.bytes != null) {
-        return VPlatformFile.fromBytes(
-          name: e.name,
-          bytes: e.bytes!,
-        );
-      }
-      return VPlatformFile.fromPath(fileLocalPath: e.path!);
-    }).toList();
-  }
 
-  static Future<List<VPlatformFile>?> getMedia() async {
-    isPicking = true;
-    final xFiles = await FilePicker.platform.pickFiles(
-      type: FileType.media,
-      allowMultiple: true,
-    );
-    isPicking = false;
-    if (xFiles == null) return null;
-    if (xFiles.files.isEmpty) return null;
-    return xFiles.files.map((e) {
-      if (e.bytes != null) {
-        return VPlatformFile.fromBytes(
-          name: e.name,
-          bytes: e.bytes!,
-        );
-      }
-      return VPlatformFile.fromPath(fileLocalPath: e.path!);
-    }).toList();
-  }
 
-  static Future<VPlatformFile?> getVideo() async {
-    isPicking = true;
-    final FilePickerResult? pickedFile = await FilePicker.platform.pickFiles(
-      type: FileType.video,
-    );
-    isPicking = false;
-    if (pickedFile == null) return null;
-    final e = pickedFile.files.first;
-    if (e.bytes != null) {
-      return VPlatformFile.fromBytes(
-        name: e.name,
-        bytes: e.bytes!,
-      );
-    }
-    return VPlatformFile.fromPath(fileLocalPath: e.path!);
-  }
-
-  static Future<List<VPlatformFile>?> getFiles() async {
-    isPicking = true;
-    final FilePickerResult? xFiles = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-    );
-    isPicking = false;
-    if (xFiles == null) return null;
-    if (xFiles.files.isEmpty) return null;
-    return xFiles.files.map((e) {
-      if (e.bytes != null) {
-        return VPlatformFile.fromBytes(
-          name: e.name,
-          bytes: e.bytes!,
-        );
-      }
-      return VPlatformFile.fromPath(fileLocalPath: e.path!);
-    }).toList();
-  }
 
   static Future clearPickerCache() async {
     await FilePicker.platform.clearTemporaryFiles();
@@ -147,19 +83,10 @@ abstract class VAppPick {
 
   static Future<VPlatformFile?> croppedImage({
     required VPlatformFile file,
-    List<CropAspectRatioPreset>? aspectRatioPresets,
   }) async {
     if (!file.isContentImage) return null;
     final CroppedFile? croppedFile = await ImageCropper().cropImage(
       sourcePath: file.fileLocalPath!,
-      aspectRatioPresets: aspectRatioPresets ??
-          [
-            CropAspectRatioPreset.square,
-            CropAspectRatioPreset.ratio3x2,
-            CropAspectRatioPreset.original,
-            CropAspectRatioPreset.ratio4x3,
-            CropAspectRatioPreset.ratio16x9
-          ],
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Cropper',

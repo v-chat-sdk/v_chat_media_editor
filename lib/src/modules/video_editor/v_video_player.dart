@@ -17,10 +17,10 @@ class VVideoPlayer extends StatefulWidget {
   final String appName;
 
   const VVideoPlayer({
-    Key? key,
+    super.key,
     required this.platformFileSource,
     required this.appName,
-  }) : super(key: key);
+  });
 
   @override
   State<VVideoPlayer> createState() => _VVideoPlayerState();

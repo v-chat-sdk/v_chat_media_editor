@@ -6,45 +6,62 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_native_image/flutter_native_image.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:v_platform/v_platform.dart';
 import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 import 'message_image_data.dart';
 
 abstract class VFileUtils {
+  static final _fcNativeVideoThumbnail = FcNativeVideoThumbnail();
+
+
   static Future<MessageImageData?> getVideoThumb({
     required VPlatformFile fileSource,
     int maxWidth = 600,
-    int quality = 50,
+    int quality = 70,
+    String? destFile,
   }) async {
-    if (fileSource.isFromBytes || fileSource.isFromUrl) {
+    try {
+      if (fileSource.isFromBytes || fileSource.isFromUrl) {
+        return null;
+      }
+      final destFile = join(
+        Directory.systemTemp.path,
+        "${DateTime.now().microsecondsSinceEpoch}.png",
+      );
+
+      final thumbPath = await _fcNativeVideoThumbnail.getVideoThumbnail(
+        srcFile: fileSource.fileLocalPath!,
+        width: maxWidth,
+        quality: quality,
+        destFile: destFile,
+        height: maxWidth,
+      );
+
+      if (thumbPath == false) {
+        return null;
+      }
+
+      final thumbImageData = await getImageInfo(
+        fileSource: VPlatformFile.fromPath(
+          fileLocalPath: destFile,
+        ),
+      );
+
+      return MessageImageData(
+        fileSource: VPlatformFile.fromPath(fileLocalPath: destFile),
+        width: thumbImageData.image.width,
+        height: thumbImageData.image.height,
+      );
+    } catch (err) {
+      print(err);
       return null;
     }
-
-    final thumbPath = await VideoThumbnail.thumbnailFile(
-      video: fileSource.fileLocalPath!,
-      maxWidth: maxWidth,
-      quality: quality,
-    );
-
-    if (thumbPath == null) {
-      return null;
-    }
-
-    final thumbImageData = await getImageInfo(
-      fileSource: VPlatformFile.fromPath(
-        fileLocalPath: thumbPath,
-      ),
-    );
-
-    return MessageImageData(
-      fileSource: VPlatformFile.fromPath(fileLocalPath: thumbPath),
-      width: thumbImageData.image.width,
-      height: thumbImageData.image.height,
-    );
   }
 
   static Future<int?> getVideoDurationMill(VPlatformFile file) async {
@@ -66,23 +83,32 @@ abstract class VFileUtils {
   // the original file is returned. Otherwise, the compressed file is returned as a new VPlatformFile object.
   static Future<VPlatformFile> compressImage({
     required VPlatformFile fileSource,
-    int compressAt = 1500 * 1000,
-    int quality = 50,
+    required int compressAt,
+    required int quality,
   }) async {
     if (!fileSource.isFromPath) {
       return fileSource;
     }
     VPlatformFile compressedFileSource = fileSource;
-    if (compressedFileSource.fileSize > compressAt) {
-      // compress only images bigger than 1500 kb
-      final compressedFile = await FlutterNativeImage.compressImage(
-        fileSource.fileLocalPath!,
-        quality: quality,
-        //targetWidth: 700,
-        // targetHeight: (properties.height! * 700 / properties.width!).round(),
-      );
-      compressedFileSource =
-          VPlatformFile.fromPath(fileLocalPath: compressedFile.path);
+    try {
+      if (compressedFileSource.fileSize > compressAt) {
+        final temp = join(
+          Directory.systemTemp.path,
+          "${DateTime.now().microsecondsSinceEpoch}",
+        );
+        final compressedFile = await FlutterImageCompress.compressAndGetFile(
+          fileSource.fileLocalPath!,
+          "$temp.jpeg",
+        );
+        if (compressedFile == null) {
+          return fileSource;
+        }
+
+        compressedFileSource =
+            VPlatformFile.fromPath(fileLocalPath: compressedFile.path);
+      }
+    } catch (err) {
+      print(err);
     }
     return compressedFileSource;
   }

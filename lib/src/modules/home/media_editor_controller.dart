@@ -117,7 +117,10 @@ class MediaEditorController extends ValueNotifier {
       } else if (f.getMediaType == VSupportedFilesType.video) {
         MessageImageData? thumb;
         if (f.fileLocalPath != null) {
-          thumb = await _getThumb(f.fileLocalPath!);
+          thumb = await _getThumb(
+            videoPath: f.fileLocalPath!,
+            quality: config.imageQuality,
+          );
         }
         final mFile = VMediaVideoRes(
           data: MessageVideoData(
@@ -137,10 +140,16 @@ class MediaEditorController extends ValueNotifier {
     startCompressImagesIfNeed();
   }
 
-  Future<MessageImageData?> _getThumb(String path) async {
+  Future<MessageImageData?> _getThumb({
+    required String videoPath,
+    required int quality,
+  }) async {
+
     return VFileUtils.getVideoThumb(
+      quality: quality,
+      destFile: config.destVideoThumbFile,
       fileSource: VPlatformFile.fromPath(
-        fileLocalPath: path,
+        fileLocalPath: videoPath,
       ),
     );
   }
@@ -161,8 +170,11 @@ class MediaEditorController extends ValueNotifier {
   Future<void> startCompressImagesIfNeed() async {
     for (final f in mediaFiles) {
       if (f is VMediaImageRes) {
-        f.data.fileSource =
-            (await VFileUtils.compressImage(fileSource: f.data.fileSource));
+        f.data.fileSource = await VFileUtils.compressImage(
+          fileSource: f.data.fileSource,
+          compressAt: config.startCompressAt,
+          quality: config.imageQuality,
+        );
       }
       _updateScreen();
     }

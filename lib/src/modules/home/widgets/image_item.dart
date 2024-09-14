@@ -17,13 +17,12 @@ class ImageItem extends StatelessWidget {
   final Function(VMediaImageRes item) onStartDraw;
 
   const ImageItem(
-      {Key? key,
+      {super.key,
       required this.image,
       required this.onCloseClicked,
       required this.onDelete,
       required this.onCrop,
-      required this.onStartDraw})
-      : super(key: key);
+      required this.onStartDraw});
 
   @override
   Widget build(BuildContext context) {

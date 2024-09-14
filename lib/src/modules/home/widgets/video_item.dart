@@ -15,12 +15,12 @@ class VideoItem extends StatelessWidget {
   final Function(VMediaVideoRes item) onPlayVideo;
 
   const VideoItem({
-    Key? key,
+    super.key,
     required this.video,
     required this.onCloseClicked,
     required this.onDelete,
     required this.onPlayVideo,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

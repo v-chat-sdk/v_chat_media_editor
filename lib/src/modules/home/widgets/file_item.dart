@@ -13,11 +13,11 @@ class FileItem extends StatelessWidget {
   final Function(VMediaFileRes item) onDelete;
 
   const FileItem({
-    Key? key,
+    super.key,
     required this.file,
     required this.onCloseClicked,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

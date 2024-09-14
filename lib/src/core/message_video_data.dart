@@ -40,7 +40,7 @@ class MessageVideoData {
     return {
       ...fileSource.toMap(),
       'duration': duration,
-      'thumbImage': thumbImage == null ? null : thumbImage!.toMap(),
+      'thumbImage': thumbImage?.toMap(),
     };
   }
 
