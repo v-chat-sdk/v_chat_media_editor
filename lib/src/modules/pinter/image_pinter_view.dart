@@ -122,15 +122,15 @@ class _ImagePinterViewState extends State<ImagePinterView> {
                 ),
                 // Redo action
                 IconButton(
-                  icon: const Icon(
-                    PhosphorIcons.arrowClockwise,
+                  icon:  Icon(
+                    PhosphorIcons.arrowClockwise(),
                   ),
                   onPressed: painterController.canRedo ? redo : null,
                 ),
                 // Undo action
                 IconButton(
-                  icon: const Icon(
-                    PhosphorIcons.arrowCounterClockwise,
+                  icon:   Icon(
+                    PhosphorIcons.arrowCounterClockwise(),
                   ),
                   onPressed: painterController.canUndo ? undo : null,
                 ),
@@ -361,7 +361,7 @@ class _ImagePinterViewState extends State<ImagePinterView> {
             // Free-style eraser
             IconButton(
               icon: Icon(
-                PhosphorIcons.eraser,
+                PhosphorIcons.eraser(),
                 color: painterController.freeStyleMode == FreeStyleMode.erase
                     ? Theme.of(context).colorScheme.secondary
                     : null,
@@ -371,7 +371,7 @@ class _ImagePinterViewState extends State<ImagePinterView> {
             // Free-style drawing
             IconButton(
               icon: Icon(
-                PhosphorIcons.scribbleLoop,
+                PhosphorIcons.scribbleLoop(),
                 color: painterController.freeStyleMode == FreeStyleMode.draw
                     ? Theme.of(context).colorScheme.secondary
                     : null,
@@ -484,14 +484,14 @@ class _ImagePinterViewState extends State<ImagePinterView> {
   }
 
   static IconData getShapeIcon(ShapeFactory? shapeFactory) {
-    if (shapeFactory is LineFactory) return PhosphorIcons.lineSegment;
-    if (shapeFactory is ArrowFactory) return PhosphorIcons.arrowUpRight;
+    if (shapeFactory is LineFactory) return PhosphorIcons.lineSegment();
+    if (shapeFactory is ArrowFactory) return PhosphorIcons.arrowUpRight();
     if (shapeFactory is DoubleArrowFactory) {
-      return PhosphorIcons.arrowsHorizontal;
+      return PhosphorIcons.arrowsHorizontal();
     }
-    if (shapeFactory is RectangleFactory) return PhosphorIcons.rectangle;
-    if (shapeFactory is OvalFactory) return PhosphorIcons.circle;
-    return PhosphorIcons.polygon;
+    if (shapeFactory is RectangleFactory) return PhosphorIcons.rectangle();
+    if (shapeFactory is OvalFactory) return PhosphorIcons.circle();
+    return PhosphorIcons.polygon();
   }
 
   void removeSelectedDrawable() {

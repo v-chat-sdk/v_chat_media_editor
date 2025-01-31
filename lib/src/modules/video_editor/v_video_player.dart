@@ -97,14 +97,14 @@ class _VVideoPlayerState extends State<VVideoPlayer> {
     } else if (widget.platformFileSource.isFromUrl) {
       final file = await (VPlatforms.isMobile
           ? DefaultCacheManager().getSingleFile(
-              widget.platformFileSource.url!,
-              key: widget.platformFileSource.getUrlPath,
+              widget.platformFileSource.networkUrl!,
+              key: widget.platformFileSource.getCachedUrlKey,
             )
           : null);
       controller = file != null
           ? VideoPlayerController.file(file, videoPlayerOptions: options)
           : VideoPlayerController.networkUrl(
-              Uri.parse(widget.platformFileSource.url!),
+              Uri.parse(widget.platformFileSource.networkUrl!),
               videoPlayerOptions: options,
             );
     }

@@ -38,8 +38,8 @@ class FileItem extends StatelessWidget {
                     IconButton(
                       iconSize: 30,
                       onPressed: () => onDelete(file),
-                      icon: const Icon(
-                        PhosphorIcons.trash,
+                      icon:   Icon(
+                        PhosphorIcons.trash(),
                         color: Colors.white,
                       ),
                     ),
@@ -62,8 +62,8 @@ class FileItem extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    PhosphorIcons.file,
+                    Icon(
+                    PhosphorIcons.file(),
                     color: Colors.white,
                   ),
                   const SizedBox(

@@ -48,8 +48,8 @@ class ImageItem extends StatelessWidget {
                     IconButton(
                       iconSize: 30,
                       onPressed: () => onDelete(image),
-                      icon: const Icon(
-                        PhosphorIcons.trash,
+                      icon:  Icon(
+                        PhosphorIcons.trash(),
                         color: Colors.white,
                       ),
                     ),
@@ -65,7 +65,7 @@ class ImageItem extends StatelessWidget {
                         onCrop(image);
                       },
                       icon: Icon(
-                        PhosphorIcons.crop,
+                        PhosphorIcons.crop(),
                         color: VPlatforms.isWeb ? Colors.grey : Colors.white,
                       ),
                     ),

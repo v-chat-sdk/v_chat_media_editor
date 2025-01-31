@@ -10,7 +10,7 @@ import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
+
 import 'package:v_platform/v_platform.dart';
 import 'package:video_player/video_player.dart';
 

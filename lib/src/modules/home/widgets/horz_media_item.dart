@@ -45,11 +45,11 @@ class HorizontalMediaItem extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(1),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(.7),
+                  color: Colors.grey.withValues(alpha: .7),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Icon(
-                  PhosphorIcons.videoCameraFill,
+                child:   Icon(
+                  PhosphorIcons.videoCamera (PhosphorIconsStyle.fill),
                   size: 17,
                   color: Colors.white,
                 ),
@@ -90,8 +90,8 @@ class HorizontalMediaItem extends StatelessWidget {
     }
     return Container(
       color: Colors.black,
-      child: const Icon(
-        PhosphorIcons.file,
+      child:   Icon(
+        PhosphorIcons.file(),
         color: Colors.white,
       ),
     );

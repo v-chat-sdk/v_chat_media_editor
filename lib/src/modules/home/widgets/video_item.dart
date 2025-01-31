@@ -46,8 +46,8 @@ class VideoItem extends StatelessWidget {
                     IconButton(
                       iconSize: 30,
                       onPressed: () => onDelete(video),
-                      icon: const Icon(
-                        PhosphorIcons.trash,
+                      icon:  Icon(
+                        PhosphorIcons.trash(),
                         color: Colors.white,
                       ),
                     ),
@@ -87,8 +87,8 @@ class VideoItem extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: Colors.black,
                       ),
-                      child: const Icon(
-                        PhosphorIcons.playFill,
+                      child:   Icon(
+                        PhosphorIcons.play (PhosphorIconsStyle.fill),
                         color: Colors.white,
                       ),
                     ),
