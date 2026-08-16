@@ -2,11 +2,13 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../v_chat_media_editor.dart';
 
@@ -48,13 +50,9 @@ class HorizontalMediaItem extends StatelessWidget {
                   color: Colors.grey.withValues(alpha: .7),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child:   Icon(
-                  PhosphorIcons.videoCamera (PhosphorIconsStyle.fill),
-                  size: 17,
-                  color: Colors.white,
-                ),
+                child: Icon(Icons.videocam, size: 17, color: Colors.white),
               ),
-            )
+            ),
         ],
       ),
     );
@@ -65,10 +63,7 @@ class HorizontalMediaItem extends StatelessWidget {
     if (mediaFile is VMediaImageRes) {
       final m = mediaFile as VMediaImageRes;
       if (m.data.isFromPath) {
-        return Image.file(
-          File(m.data.fileSource.fileLocalPath!),
-          fit: fit,
-        );
+        return Image.file(File(m.data.fileSource.fileLocalPath!), fit: fit);
       }
       if (m.data.isFromBytes) {
         return Image.memory(
@@ -84,16 +79,11 @@ class HorizontalMediaItem extends StatelessWidget {
           fit: fit,
         );
       }
-      return Container(
-        color: Colors.black,
-      );
+      return Container(color: Colors.black);
     }
     return Container(
       color: Colors.black,
-      child:   Icon(
-        PhosphorIcons.file(),
-        color: Colors.white,
-      ),
+      child: const Icon(Icons.insert_drive_file_outlined, color: Colors.white),
     );
   }
 }

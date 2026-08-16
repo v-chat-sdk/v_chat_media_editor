@@ -1,57 +1,85 @@
-# V Chat SDK - Media Editor Package
+# V Chat Media Editor
 
-Welcome to the V Chat SDK Media Editor Package, a standalone component that provides robust image and video editing capabilities for your chat application. This package is part of the V Chat SDK ecosystem, but it can also be used independently.
+A Flutter package for previewing attachments, drawing on images, cropping
+supported images, generating video thumbnails, and returning typed media
+metadata before upload.
 
 ## Features
 
-- **Image and Video Editing:** This package allows users to manipulate images and videos within the chat, including cropping images and drawing on them.
-- **Customizable Editing Configurations:** You can customize image quality with the `VMediaEditorConfig` class.
+- Preview path-, byte-, asset-, and URL-based media.
+- Draw text, shapes, and freehand annotations on local images.
+- Crop local images on Android and iOS.
+- Generate thumbnails and read durations for local videos.
+- Return image, video, and generic-file results through one typed API.
+
+## Requirements
+
+- Flutter 3.44 or newer
+- Dart 3.12 or newer
+- iOS 14.0 or newer
+- macOS 11.0 or newer
 
 ## Installation
 
-To get started with the V Chat SDK Media Editor package, you'll first need to install it in your project using your preferred package manager.
+```yaml
+dependencies:
+  v_chat_media_editor: ^3.0.0
+  v_platform: ^2.2.0
+```
+
+`v_platform` provides the `VPlatformFile` objects accepted by the editor.
 
 ## Usage
 
-To implement this package in your application, use the `VMediaEditorView`:
-
 ```dart
-final fileRes = await context.toPage(VMediaEditorView(
-  files: files,
-  config: VMediaEditorConfig(
-    imageQuality: vMessageConfig.compressImageQuality,
+final result = await Navigator.of(context).push<List<VBaseMediaRes>>(
+  MaterialPageRoute(
+    builder: (_) => VMediaEditorView(
+      files: selectedFiles,
+      config: const VMediaEditorConfig(
+        imageQuality: 75,
+        startCompressAt: 1_500_000,
+      ),
+    ),
   ),
-)) as List<VBaseMediaRes>?;
-```
+);
 
-`VBaseMediaRes` is the base class for the returned media objects. You can perform different actions based on the type of media returned:
-
-```dart
-if (file is VMediaImageRes) {
-  // Perform actions for edited images
-}
-
-if (file is VMediaVideoRes) {
-  // Perform actions for edited videos
-}
-
-if (file is VMediaFileRes) {
-  // Perform actions for other file types
+for (final media in result ?? const <VBaseMediaRes>[]) {
+  switch (media) {
+    case VMediaImageRes image:
+      debugPrint('${image.data.width} × ${image.data.height}');
+    case VMediaVideoRes video:
+      debugPrint(video.data.durationFormat);
+    case VMediaFileRes file:
+      debugPrint(file.data.name);
+  }
 }
 ```
 
-## Documentation
+See [`example/`](example/) for multi-file selection and a complete result UI.
 
-For a more detailed explanation on how to use this package, please refer to our comprehensive [documentation](https://v-chat-sdk.github.io/vchat-v2-docs/docs/intro/). This includes in-depth guides, examples, and tutorials on how to fully leverage the V Chat SDK ecosystem.
+## Configuration
 
-## Support
+| Option | Default | Purpose |
+| --- | ---: | --- |
+| `imageQuality` | `50` | Image-compression and thumbnail quality (`0`–`100`). |
+| `startCompressAt` | `1,500,000` | Compression threshold in bytes. |
+| `destVideoThumbFile` | `null` | Optional output path for generated thumbnails. |
+| `maxVideoSizeMb` | `100` | Reserved for future video-compression validation. |
 
-If you encounter any issues, have feature requests, or general inquiries, please visit our [issues page](https://github.com/hatemragab/v_chat_sdk/issues) for information and to report any problems.
+Unsupported editing actions are disabled where possible. Image drawing is
+currently disabled on web, while cropping is limited to Android and iOS.
+Video playback availability follows the platforms supported by `video_player`.
+Linux supports selection, image/file previews, and typed result generation;
+native video playback and image editing depend on the installed plugins.
 
----
+## Development
 
-**Note:** Always ensure you are using the most recent version of the V Chat SDK and its packages to enjoy the latest features and improvements.
+```sh
+flutter pub get
+dart format lib test example/lib example/test
+flutter analyze
+flutter test
+```
 
----
-
-The V Chat SDK Media Editor Package is proudly developed and maintained by the V Chat Team.
+Report issues in the [GitHub issue tracker](https://github.com/v-chat-sdk/v_chat_media_editor/issues).

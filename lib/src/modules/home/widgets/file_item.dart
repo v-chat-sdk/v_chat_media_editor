@@ -2,15 +2,17 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../v_chat_media_editor.dart';
 
 class FileItem extends StatelessWidget {
   final VMediaFileRes file;
   final VoidCallback onCloseClicked;
-  final Function(VMediaFileRes item) onDelete;
+  final ValueChanged<VMediaFileRes> onDelete;
 
   const FileItem({
     super.key,
@@ -30,24 +32,20 @@ class FileItem extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                BackButton(
-                  onPressed: onCloseClicked,
-                ),
+                BackButton(onPressed: onCloseClicked),
                 Row(
                   children: [
                     IconButton(
                       iconSize: 30,
                       onPressed: () => onDelete(file),
-                      icon:   Icon(
-                        PhosphorIcons.trash(),
+                      icon: const Icon(
+                        Icons.delete_outline,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(
-                      width: 3,
-                    ),
+                    const SizedBox(width: 3),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -58,17 +56,17 @@ class FileItem extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8), color: Colors.green),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.green,
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                    Icon(
-                    PhosphorIcons.file(),
+                  const Icon(
+                    Icons.insert_drive_file_outlined,
                     color: Colors.white,
                   ),
-                  const SizedBox(
-                    width: 10,
-                  ),
+                  const SizedBox(width: 10),
                   Text(
                     file.data.name.toString(),
                     style: const TextStyle(
@@ -80,7 +78,7 @@ class FileItem extends StatelessWidget {
               ),
             ),
           ),
-        )
+        ),
       ],
     );
   }

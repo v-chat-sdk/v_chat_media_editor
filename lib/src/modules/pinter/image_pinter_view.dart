@@ -2,16 +2,18 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_painter_v2/flutter_painter.dart';
+import 'package:flutter_painter/flutter_painter.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:v_platform/v_platform.dart';
 
 class ImagePinterView extends StatefulWidget {
@@ -27,10 +29,10 @@ class _ImagePinterViewState extends State<ImagePinterView> {
   bool isPressing = false;
 
   static const Color red = Colors.indigo;
-  FocusNode textFocusNode = FocusNode();
-  late PainterController painterController;
+  final FocusNode textFocusNode = FocusNode();
+  late final PainterController painterController;
   ui.Image? backgroundImage;
-  Paint shapePaint = Paint()
+  final Paint shapePaint = Paint()
     ..strokeWidth = 5
     ..color = Colors.indigo
     ..style = PaintingStyle.fill
@@ -53,16 +55,9 @@ class _ImagePinterViewState extends State<ImagePinterView> {
             fontSize: 18,
           ),
         ),
-        freeStyle: const FreeStyleSettings(
-          color: red,
-          strokeWidth: 5,
-        ),
-        shape: ShapeSettings(
-          paint: shapePaint,
-        ),
-        scale: const ScaleSettings(
-          enabled: true,
-        ),
+        freeStyle: const FreeStyleSettings(color: red, strokeWidth: 5),
+        shape: ShapeSettings(paint: shapePaint),
+        scale: const ScaleSettings(enabled: true),
       ),
     );
     // Listen to focus events of the text field
@@ -72,7 +67,9 @@ class _ImagePinterViewState extends State<ImagePinterView> {
   }
 
   void onFocus() {
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void undo() {
@@ -86,16 +83,30 @@ class _ImagePinterViewState extends State<ImagePinterView> {
       image = await MemoryImage(
         Uint8List.fromList(widget.platformFileSource.bytes!),
       ).image;
+    } else if (widget.platformFileSource.fileLocalPath != null) {
+      image = await FileImage(
+        File(widget.platformFileSource.fileLocalPath!),
+      ).image;
     } else {
-      image =
-          await FileImage(File(widget.platformFileSource.fileLocalPath!)).image;
+      return;
     }
 
+    if (!mounted) {
+      return;
+    }
     setState(() {
       backgroundImage = image;
       painterController.background = image.backgroundDrawable;
     });
     toggleFreeStyleDraw();
+  }
+
+  @override
+  void dispose() {
+    textFocusNode.removeListener(onFocus);
+    textFocusNode.dispose();
+    painterController.dispose();
+    super.dispose();
   }
 
   @override
@@ -111,10 +122,9 @@ class _ImagePinterViewState extends State<ImagePinterView> {
               title: child,
               actions: [
                 IconButton(
-                  icon: const Icon(
-                    Icons.flip,
-                  ),
-                  onPressed: painterController.selectedObjectDrawable != null &&
+                  icon: const Icon(Icons.flip),
+                  onPressed:
+                      painterController.selectedObjectDrawable != null &&
                           painterController.selectedObjectDrawable
                               is ImageDrawable
                       ? flipSelectedImageDrawable
@@ -122,16 +132,12 @@ class _ImagePinterViewState extends State<ImagePinterView> {
                 ),
                 // Redo action
                 IconButton(
-                  icon:  Icon(
-                    PhosphorIcons.arrowClockwise(),
-                  ),
+                  icon: const Icon(Icons.redo),
                   onPressed: painterController.canRedo ? redo : null,
                 ),
                 // Undo action
                 IconButton(
-                  icon:   Icon(
-                    PhosphorIcons.arrowCounterClockwise(),
-                  ),
+                  icon: const Icon(Icons.undo),
                   onPressed: painterController.canUndo ? undo : null,
                 ),
                 if (isPressing)
@@ -141,10 +147,8 @@ class _ImagePinterViewState extends State<ImagePinterView> {
                   )
                 else
                   IconButton(
-                    icon: const Icon(
-                      Icons.done,
-                    ),
-                    onPressed: () => renderAndDisplayImage(context),
+                    icon: const Icon(Icons.done),
+                    onPressed: renderAndDisplayImage,
                   ),
               ],
             );
@@ -159,9 +163,7 @@ class _ImagePinterViewState extends State<ImagePinterView> {
               child: Center(
                 child: AspectRatio(
                   aspectRatio: backgroundImage!.width / backgroundImage!.height,
-                  child: FlutterPainter(
-                    controller: painterController,
-                  ),
+                  child: FlutterPainter(controller: painterController),
                 ),
               ),
             ),
@@ -171,18 +173,17 @@ class _ImagePinterViewState extends State<ImagePinterView> {
             left: 0,
             child: ValueListenableBuilder(
               valueListenable: painterController,
-              builder: (context, _, __) => Row(
+              builder: (context, _, _) => Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Flexible(
                     child: Container(
-                      constraints: const BoxConstraints(
-                        maxWidth: 400,
-                      ),
+                      constraints: const BoxConstraints(maxWidth: 400),
                       padding: const EdgeInsets.symmetric(horizontal: 15),
                       decoration: const BoxDecoration(
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
                         color: Colors.white54,
                       ),
                       child: Column(
@@ -218,9 +219,7 @@ class _ImagePinterViewState extends State<ImagePinterView> {
                             // Control text font size
                             Row(
                               children: [
-                                const Expanded(
-                                  child: Text("Font Size"),
-                                ),
+                                const Expanded(child: Text("Font Size")),
                                 Expanded(
                                   flex: 3,
                                   child: Slider.adaptive(
@@ -228,7 +227,7 @@ class _ImagePinterViewState extends State<ImagePinterView> {
                                     max: 96,
                                     value:
                                         painterController.textStyle.fontSize ??
-                                            14,
+                                        14,
                                     onChanged: setTextFontSize,
                                   ),
                                 ),
@@ -261,23 +260,21 @@ class _ImagePinterViewState extends State<ImagePinterView> {
                             // Control text color hue
                             Row(
                               children: [
-                                const Expanded(
-                                  child: Text("Stroke Width"),
-                                ),
+                                const Expanded(child: Text("Stroke Width")),
                                 Expanded(
                                   flex: 3,
                                   child: Slider.adaptive(
                                     min: 2,
                                     max: 25,
-                                    value: painterController
-                                            .shapePaint?.strokeWidth ??
+                                    value:
+                                        painterController
+                                            .shapePaint
+                                            ?.strokeWidth ??
                                         shapePaint.strokeWidth,
                                     onChanged: (value) => setShapeFactoryPaint(
                                       (painterController.shapePaint ??
                                               shapePaint)
-                                          .copyWith(
-                                        strokeWidth: value,
-                                      ),
+                                          .copyWith(strokeWidth: value),
                                     ),
                                   ),
                                 ),
@@ -305,9 +302,13 @@ class _ImagePinterViewState extends State<ImagePinterView> {
                                       (painterController.shapePaint ??
                                               shapePaint)
                                           .copyWith(
-                                        color: HSVColor.fromAHSV(1, hue, 1, 1)
-                                            .toColor(),
-                                      ),
+                                            color: HSVColor.fromAHSV(
+                                              1,
+                                              hue,
+                                              1,
+                                              1,
+                                            ).toColor(),
+                                          ),
                                     ),
                                   ),
                                 ),
@@ -316,33 +317,32 @@ class _ImagePinterViewState extends State<ImagePinterView> {
 
                             Row(
                               children: [
-                                const Expanded(
-                                  child: Text("Fill shape"),
-                                ),
+                                const Expanded(child: Text("Fill shape")),
                                 Expanded(
                                   flex: 3,
                                   child: Center(
                                     child: Switch(
-                                      value: (painterController.shapePaint ??
+                                      value:
+                                          (painterController.shapePaint ??
                                                   shapePaint)
                                               .style ==
                                           PaintingStyle.fill,
                                       onChanged: (value) =>
                                           setShapeFactoryPaint(
-                                        (painterController.shapePaint ??
-                                                shapePaint)
-                                            .copyWith(
-                                          style: value
-                                              ? PaintingStyle.fill
-                                              : PaintingStyle.stroke,
-                                        ),
-                                      ),
+                                            (painterController.shapePaint ??
+                                                    shapePaint)
+                                                .copyWith(
+                                                  style: value
+                                                      ? PaintingStyle.fill
+                                                      : PaintingStyle.stroke,
+                                                ),
+                                          ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ]
+                          ],
                         ],
                       ),
                     ),
@@ -355,13 +355,13 @@ class _ImagePinterViewState extends State<ImagePinterView> {
       ),
       bottomNavigationBar: ValueListenableBuilder(
         valueListenable: painterController,
-        builder: (context, _, __) => Row(
+        builder: (context, _, _) => Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             // Free-style eraser
             IconButton(
               icon: Icon(
-                PhosphorIcons.eraser(),
+                Icons.auto_fix_off,
                 color: painterController.freeStyleMode == FreeStyleMode.erase
                     ? Theme.of(context).colorScheme.secondary
                     : null,
@@ -371,41 +371,38 @@ class _ImagePinterViewState extends State<ImagePinterView> {
             // Free-style drawing
             IconButton(
               icon: Icon(
-                PhosphorIcons.scribbleLoop(),
+                Icons.gesture,
                 color: painterController.freeStyleMode == FreeStyleMode.draw
                     ? Theme.of(context).colorScheme.secondary
                     : null,
               ),
               onPressed: toggleFreeStyleDraw,
             ),
-            // Add text
 
+            // Add text
             if (painterController.shapeFactory == null)
               PopupMenuButton<ShapeFactory?>(
                 tooltip: "Add shape",
-                itemBuilder: (context) => <ShapeFactory, String>{
-                  LineFactory(): "Line",
-                  ArrowFactory(): "Arrow",
-                  DoubleArrowFactory(): "Double Arrow",
-                  RectangleFactory(): "Rectangle",
-                  OvalFactory(): "Oval",
-                }
-                    .entries
-                    .map(
-                      (e) => PopupMenuItem(
-                        value: e.key,
-                        child: Row(
-                          children: [
-                            Icon(
-                              getShapeIcon(e.key),
-                              color: Colors.black,
+                itemBuilder: (context) =>
+                    <ShapeFactory, String>{
+                          LineFactory(): "Line",
+                          ArrowFactory(): "Arrow",
+                          DoubleArrowFactory(): "Double Arrow",
+                          RectangleFactory(): "Rectangle",
+                          OvalFactory(): "Oval",
+                        }.entries
+                        .map(
+                          (e) => PopupMenuItem(
+                            value: e.key,
+                            child: Row(
+                              children: [
+                                Icon(getShapeIcon(e.key), color: Colors.black),
+                                Text(" ${e.value}"),
+                              ],
                             ),
-                            Text(" ${e.value}")
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
+                          ),
+                        )
+                        .toList(),
                 onSelected: selectShape,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -434,38 +431,50 @@ class _ImagePinterViewState extends State<ImagePinterView> {
   void toggleFreeStyleErase() {
     painterController.freeStyleMode =
         painterController.freeStyleMode != FreeStyleMode.erase
-            ? FreeStyleMode.erase
-            : FreeStyleMode.none;
+        ? FreeStyleMode.erase
+        : FreeStyleMode.none;
   }
 
-  Future<void> renderAndDisplayImage(BuildContext context) async {
+  Future<void> renderAndDisplayImage() async {
     if (backgroundImage == null) return;
 
     setState(() {
       isPressing = true;
     });
 
-    final backgroundImageSize = Size(
-      backgroundImage!.width.toDouble(),
-      backgroundImage!.height.toDouble(),
-    );
-    final ui.Image image =
-        await painterController.renderImage(backgroundImageSize);
-    final bytes = await image.pngBytes;
-    if (widget.platformFileSource.bytes != null) {
-      widget.platformFileSource.bytes = bytes;
-
-      return Navigator.pop(context, widget.platformFileSource);
-    } else {
-      final tempFile = File(
-        join(
-          (await getTemporaryDirectory()).path,
-          "${DateTime.now().millisecondsSinceEpoch}.png",
-        ),
+    try {
+      final backgroundImageSize = Size(
+        backgroundImage!.width.toDouble(),
+        backgroundImage!.height.toDouble(),
       );
-      final file = await tempFile.writeAsBytes(bytes!);
-      widget.platformFileSource.fileLocalPath = file.path;
-      return Navigator.pop(context, widget.platformFileSource);
+      final image = await painterController.renderImage(backgroundImageSize);
+      final bytes = await image.pngBytes;
+      if (bytes == null || !mounted) {
+        return;
+      }
+      if (widget.platformFileSource.bytes != null) {
+        widget.platformFileSource.bytes = bytes;
+      } else {
+        final directory = await getTemporaryDirectory();
+        if (!mounted) {
+          return;
+        }
+        final tempFile = File(
+          join(directory.path, '${DateTime.now().millisecondsSinceEpoch}.png'),
+        );
+        final file = await tempFile.writeAsBytes(bytes);
+        widget.platformFileSource.fileLocalPath = file.path;
+      }
+      if (!mounted) {
+        return;
+      }
+      Navigator.pop(this.context, widget.platformFileSource);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isPressing = false;
+        });
+      }
     }
   }
 
@@ -484,14 +493,14 @@ class _ImagePinterViewState extends State<ImagePinterView> {
   }
 
   static IconData getShapeIcon(ShapeFactory? shapeFactory) {
-    if (shapeFactory is LineFactory) return PhosphorIcons.lineSegment();
-    if (shapeFactory is ArrowFactory) return PhosphorIcons.arrowUpRight();
+    if (shapeFactory is LineFactory) return Icons.horizontal_rule;
+    if (shapeFactory is ArrowFactory) return Icons.north_east;
     if (shapeFactory is DoubleArrowFactory) {
-      return PhosphorIcons.arrowsHorizontal();
+      return Icons.compare_arrows;
     }
-    if (shapeFactory is RectangleFactory) return PhosphorIcons.rectangle();
-    if (shapeFactory is OvalFactory) return PhosphorIcons.circle();
-    return PhosphorIcons.polygon();
+    if (shapeFactory is RectangleFactory) return Icons.rectangle_outlined;
+    if (shapeFactory is OvalFactory) return Icons.circle_outlined;
+    return Icons.polyline;
   }
 
   void removeSelectedDrawable() {
@@ -513,28 +522,34 @@ class _ImagePinterViewState extends State<ImagePinterView> {
   }
 
   void setFreeStyleColor(double hue) {
-    painterController.freeStyleColor =
-        HSVColor.fromAHSV(1, hue, 1, 1).toColor();
+    painterController.freeStyleColor = HSVColor.fromAHSV(
+      1,
+      hue,
+      1,
+      1,
+    ).toColor();
   }
 
   void toggleFreeStyleDraw() {
     painterController.freeStyleMode =
         painterController.freeStyleMode != FreeStyleMode.draw
-            ? FreeStyleMode.draw
-            : FreeStyleMode.none;
+        ? FreeStyleMode.draw
+        : FreeStyleMode.none;
   }
 
   void setTextColor(double hue) {
-    painterController.textStyle = painterController.textStyle
-        .copyWith(color: HSVColor.fromAHSV(1, hue, 1, 1).toColor());
+    painterController.textStyle = painterController.textStyle.copyWith(
+      color: HSVColor.fromAHSV(1, hue, 1, 1).toColor(),
+    );
   }
 
   void setTextFontSize(double size) {
     // Set state is just to update the current UI, the [FlutterPainter] UI updates without it
     setState(() {
       painterController.textSettings = painterController.textSettings.copyWith(
-        textStyle:
-            painterController.textSettings.textStyle.copyWith(fontSize: size),
+        textStyle: painterController.textSettings.textStyle.copyWith(
+          fontSize: size,
+        ),
       );
     });
   }

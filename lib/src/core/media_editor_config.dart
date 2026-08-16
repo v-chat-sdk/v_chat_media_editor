@@ -2,24 +2,32 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+/// Controls compression, thumbnail generation, and validation behavior.
 class VMediaEditorConfig {
+  /// Creates media-editor settings with production-safe defaults.
   const VMediaEditorConfig({
     this.maxVideoSizeMb = 100,
     this.imageQuality = 50,
-    this.startCompressAt = 1500 * 1000,
-    this.destVideoThumbFile  ,
-  });
+    this.startCompressAt = 1_500_000,
+    this.destVideoThumbFile,
+  }) : assert(maxVideoSizeMb > 0, 'maxVideoSizeMb must be greater than zero'),
+       assert(
+         imageQuality >= 0 && imageQuality <= 100,
+         'imageQuality must be between 0 and 100',
+       ),
+       assert(startCompressAt >= 0, 'startCompressAt cannot be negative');
 
-  ///in future this will works for video compress
+  /// Maximum accepted video size in megabytes.
+  ///
+  /// Reserved for video compression support.
   final int maxVideoSizeMb;
 
-  ///compress image Quality
+  /// JPEG compression and video-thumbnail quality, from 0 to 100.
   final int imageQuality;
 
-  ///send the image bytes where the compress should works
-  ///default to 1500 * 1000 which 2.5MB if the image bigger than 2.5MB the compress will start!
+  /// File-size threshold, in bytes, above which images are compressed.
   final int startCompressAt;
 
-  ///when the video thumbnail put the fill where it should place the output image!
+  /// Optional destination path for generated video thumbnails.
   final String? destVideoThumbFile;
 }

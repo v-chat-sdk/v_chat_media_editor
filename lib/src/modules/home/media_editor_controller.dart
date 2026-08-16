@@ -2,22 +2,23 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:v_platform/v_platform.dart';
 
 import '../../core/core.dart';
-import '../../core/message_image_data.dart';
-import '../../core/message_video_data.dart';
 import '../../core/v_file.dart';
 import '../pinter/image_pinter_view.dart';
 import '../video_editor/v_video_player.dart';
 import 'app_pick.dart';
 
-class MediaEditorController extends ValueNotifier {
-  MediaEditorController(this.platformFiles, this.config) : super(null) {
-    _init();
+class MediaEditorController extends ValueNotifier<int> {
+  MediaEditorController(this.platformFiles, this.config) : super(0) {
+    unawaited(_init());
   }
 
   final List<VPlatformFile> platformFiles;
@@ -25,6 +26,7 @@ class MediaEditorController extends ValueNotifier {
   final VMediaEditorConfig config;
   bool isLoading = true;
   bool isCompressing = false;
+  bool _isDisposed = false;
 
   int currentImageIndex = 0;
 
@@ -39,45 +41,37 @@ class MediaEditorController extends ValueNotifier {
     if (mediaFiles.isEmpty) {
       return Navigator.pop(context);
     }
+    if (currentImageIndex >= mediaFiles.length) {
+      currentImageIndex = mediaFiles.length - 1;
+    }
+    for (final mediaFile in mediaFiles) {
+      mediaFile.isSelected = false;
+    }
+    mediaFiles[currentImageIndex].isSelected = true;
+    if (pageController.hasClients) {
+      pageController.jumpToPage(currentImageIndex);
+    }
     _updateScreen();
   }
 
-  Future<void> onCrop(VMediaImageRes item, BuildContext context) async {
+  Future<void> onCrop(VMediaImageRes item) async {
     final res = await VAppPick.croppedImage(file: item.data.fileSource);
-    item.data.fileSource = res!;
-    _updateScreen();
+    if (res != null) {
+      item.data.fileSource = res;
+      _updateScreen();
+    }
   }
 
-  Future onStartEditVideo(
-    VMediaVideoRes item,
-    BuildContext context,
-  ) async {
-    // if (item.data.isFromPath) {
-    //   final file = await Navigator.push(
-    //     context,
-    //     MaterialPageRoute<void>(
-    //       builder: (BuildContext context) =>
-    //           VideoEditor(file: File(item.data.fileSource.filePath!)),
-    //     ),
-    //   ) as File?;
-    //   if (file != null) {
-    //     item.data.fileSource.filePath = file.path;
-    //   }
-    // }
-  }
-
-  Future<void> onStartDraw(
-    VBaseMediaRes item,
-    BuildContext context,
-  ) async {
+  Future<void> onStartDraw(VBaseMediaRes item, BuildContext context) async {
     if (item is VMediaImageRes) {
-      final editedFile = await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => ImagePinterView(
-            platformFileSource: item.data.fileSource,
-          ),
-        ),
-      ) as VPlatformFile?;
+      final editedFile =
+          await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ImagePinterView(platformFileSource: item.data.fileSource),
+                ),
+              )
+              as VPlatformFile?;
       if (editedFile != null) {
         item.data.fileSource = editedFile;
       }
@@ -85,13 +79,24 @@ class MediaEditorController extends ValueNotifier {
     _updateScreen();
   }
 
-  void close() {
+  @override
+  void dispose() {
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
     pageController.dispose();
+    super.dispose();
   }
 
   void changeImageIndex(int index) {
+    if (index < 0 || index >= mediaFiles.length) {
+      return;
+    }
     currentImageIndex = index;
-    pageController.jumpToPage(index);
+    if (pageController.hasClients && pageController.page?.round() != index) {
+      pageController.jumpToPage(index);
+    }
     for (final element in mediaFiles) {
       element.isSelected = false;
     }
@@ -100,18 +105,16 @@ class MediaEditorController extends ValueNotifier {
   }
 
   void _updateScreen() {
-    notifyListeners();
+    if (!_isDisposed) {
+      value++;
+    }
   }
 
-  Future _init() async {
+  Future<void> _init() async {
     for (final f in platformFiles) {
       if (f.getMediaType == VSupportedFilesType.image) {
         final mImage = VMediaImageRes(
-          data: MessageImageData(
-            fileSource: f,
-            width: -1,
-            height: -1,
-          ),
+          data: MessageImageData(fileSource: f, width: -1, height: -1),
         );
         mediaFiles.add(mImage);
       } else if (f.getMediaType == VSupportedFilesType.video) {
@@ -125,7 +128,7 @@ class MediaEditorController extends ValueNotifier {
         final mFile = VMediaVideoRes(
           data: MessageVideoData(
             fileSource: f,
-            duration: -1,
+            duration: null,
             thumbImage: thumb,
           ),
         );
@@ -134,23 +137,22 @@ class MediaEditorController extends ValueNotifier {
         mediaFiles.add(VMediaFileRes(data: f));
       }
     }
-    mediaFiles[0].isSelected = true;
+    if (mediaFiles.isNotEmpty) {
+      mediaFiles.first.isSelected = true;
+      await startCompressImagesIfNeed(notify: false);
+    }
     isLoading = false;
     _updateScreen();
-    startCompressImagesIfNeed();
   }
 
   Future<MessageImageData?> _getThumb({
     required String videoPath,
     required int quality,
   }) async {
-
     return VFileUtils.getVideoThumb(
       quality: quality,
       destFile: config.destVideoThumbFile,
-      fileSource: VPlatformFile.fromPath(
-        fileLocalPath: videoPath,
-      ),
+      fileSource: VPlatformFile.fromPath(fileLocalPath: videoPath),
     );
   }
 
@@ -160,14 +162,14 @@ class MediaEditorController extends ValueNotifier {
         MaterialPageRoute(
           builder: (context) => VVideoPlayer(
             platformFileSource: item.data.fileSource,
-            appName: "media_editor",
+            appName: 'media_editor',
           ),
         ),
       );
     }
   }
 
-  Future<void> startCompressImagesIfNeed() async {
+  Future<void> startCompressImagesIfNeed({bool notify = true}) async {
     for (final f in mediaFiles) {
       if (f is VMediaImageRes) {
         f.data.fileSource = await VFileUtils.compressImage(
@@ -176,33 +178,39 @@ class MediaEditorController extends ValueNotifier {
           quality: config.imageQuality,
         );
       }
+    }
+    if (notify) {
       _updateScreen();
     }
   }
 
   Future<void> onSubmitData(BuildContext context) async {
+    if (isCompressing || mediaFiles.isEmpty) {
+      return;
+    }
     isCompressing = true;
     _updateScreen();
-    for (final f in mediaFiles) {
-      if (f is VMediaImageRes && f.data.isFromPath) {
-        final data = await VFileUtils.getImageInfo(
-          fileSource: f.data.fileSource,
-        );
-        f.data.width = data.image.width;
-        f.data.height = data.image.height;
-      } else if (f is VMediaImageRes && f.data.isFromBytes) {
-        final data = await VFileUtils.getImageInfo(
-          fileSource: f.data.fileSource,
-        );
-        f.data.width = data.image.width;
-        f.data.height = data.image.height;
-      } else if (f is VMediaVideoRes) {
-        f.data.duration =
-            await VFileUtils.getVideoDurationMill(f.data.fileSource);
+    try {
+      for (final f in mediaFiles) {
+        if (f is VMediaImageRes && (f.data.isFromPath || f.data.isFromBytes)) {
+          final data = await VFileUtils.getImageInfo(
+            fileSource: f.data.fileSource,
+          );
+          f.data.width = data.image.width;
+          f.data.height = data.image.height;
+        } else if (f is VMediaVideoRes) {
+          f.data.duration = await VFileUtils.getVideoDurationMill(
+            f.data.fileSource,
+          );
+        }
       }
+      if (!context.mounted) {
+        return;
+      }
+      Navigator.pop(context, List<VBaseMediaRes>.unmodifiable(mediaFiles));
+    } finally {
+      isCompressing = false;
+      _updateScreen();
     }
-    Navigator.pop(context, mediaFiles);
-
-    //await VideoCompress.deleteAllCache();
   }
 }

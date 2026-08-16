@@ -1,0 +1,17 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.git/
+.github/
+.idea/
+.vscode/
+.DS_Store
+AGENTS.md
+build/
+doc/api/
+example/.dart_tool/
+example/build/
+example/**/ephemeral/
+example/**/GeneratedPluginRegistrant.*
+example/**/generated_plugin_registrant.*
+example/**/generated_plugins.cmake

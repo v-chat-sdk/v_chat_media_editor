@@ -2,6 +2,9 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'dart:io';
 
 import 'package:chewie/chewie.dart';
@@ -9,8 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:v_platform/v_platform.dart';
 import 'package:video_player/video_player.dart';
-
-import '../../core/conditional_builder.dart';
 
 class VVideoPlayer extends StatefulWidget {
   final VPlatformFile platformFileSource;
@@ -28,6 +29,7 @@ class VVideoPlayer extends StatefulWidget {
 
 class _VVideoPlayerState extends State<VVideoPlayer> {
   bool isLoading = true;
+  String? _errorMessage;
   VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
 
@@ -39,78 +41,94 @@ class _VVideoPlayerState extends State<VVideoPlayer> {
 
   @override
   void dispose() {
-    super.dispose();
-    _videoPlayerController?.dispose();
     _chewieController?.dispose();
+    _videoPlayerController?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (!widget.platformFileSource.isContentVideo) {
-      return Material(
-          child: Text("the file must be video ${widget.platformFileSource}"));
+      return const Scaffold(
+        body: Center(child: Text('The selected file is not a video.')),
+      );
     }
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      floatingActionButton:
-          widget.platformFileSource.isFromUrl ? const SizedBox() : null,
-      body: SafeArea(
-        child: Center(
-          child: VConditionalBuilder(
-            condition: !isLoading,
-            thenBuilder: () => AspectRatio(
-              aspectRatio: _videoPlayerController!.value.aspectRatio,
-              child: Chewie(
-                controller: _chewieController!,
-              ),
-            ),
-            elseBuilder: () => const CircularProgressIndicator.adaptive(),
-          ),
+        title: Text(
+          widget.appName,
+          style: const TextStyle(color: Colors.white),
         ),
       ),
+      body: SafeArea(child: Center(child: _buildPlayer())),
     );
   }
 
-  void _initAndPlay() async {
-    VideoPlayerController? controller;
-    VideoPlayerOptions options =
-        VideoPlayerOptions(allowBackgroundPlayback: false);
-    if (widget.platformFileSource.isFromPath) {
-      controller = VideoPlayerController.file(
-        File(widget.platformFileSource.fileLocalPath!),
-        videoPlayerOptions: options,
+  Widget _buildPlayer() {
+    if (_errorMessage case final errorMessage?) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          errorMessage,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white),
+        ),
       );
-    } else if (widget.platformFileSource.isFromBytes) {
-      controller = VideoPlayerController.contentUri(
-        Uri.dataFromBytes(widget.platformFileSource.getBytes),
-        videoPlayerOptions: options,
-      );
-    } else if (widget.platformFileSource.isFromAssets) {
-      controller = VideoPlayerController.asset(
-        widget.platformFileSource.assetsPath!,
-        videoPlayerOptions: options,
-      );
-    } else if (widget.platformFileSource.isFromUrl) {
-      final file = await (VPlatforms.isMobile
-          ? DefaultCacheManager().getSingleFile(
-              widget.platformFileSource.networkUrl!,
-              key: widget.platformFileSource.getCachedUrlKey,
-            )
-          : null);
-      controller = file != null
-          ? VideoPlayerController.file(file, videoPlayerOptions: options)
-          : VideoPlayerController.networkUrl(
-              Uri.parse(widget.platformFileSource.networkUrl!),
-              videoPlayerOptions: options,
-            );
     }
+    if (isLoading) {
+      return const CircularProgressIndicator.adaptive();
+    }
+    return AspectRatio(
+      aspectRatio: _videoPlayerController!.value.aspectRatio,
+      child: Chewie(controller: _chewieController!),
+    );
+  }
 
-    if (controller != null) {
+  Future<void> _initAndPlay() async {
+    VideoPlayerController? controller;
+    try {
+      final options = VideoPlayerOptions(allowBackgroundPlayback: false);
+      if (widget.platformFileSource.isFromPath) {
+        controller = VideoPlayerController.file(
+          File(widget.platformFileSource.fileLocalPath!),
+          videoPlayerOptions: options,
+        );
+      } else if (widget.platformFileSource.isFromBytes) {
+        controller = VideoPlayerController.contentUri(
+          Uri.dataFromBytes(widget.platformFileSource.getBytes),
+          videoPlayerOptions: options,
+        );
+      } else if (widget.platformFileSource.isFromAssets) {
+        controller = VideoPlayerController.asset(
+          widget.platformFileSource.assetsPath!,
+          videoPlayerOptions: options,
+        );
+      } else if (widget.platformFileSource.isFromUrl) {
+        final file = VPlatforms.isMobile
+            ? await DefaultCacheManager().getSingleFile(
+                widget.platformFileSource.networkUrl!,
+                key: widget.platformFileSource.getCachedUrlKey,
+              )
+            : null;
+        controller = file != null
+            ? VideoPlayerController.file(file, videoPlayerOptions: options)
+            : VideoPlayerController.networkUrl(
+                Uri.parse(widget.platformFileSource.networkUrl!),
+                videoPlayerOptions: options,
+              );
+      }
+
+      if (controller == null) {
+        throw UnsupportedError('Unsupported video source.');
+      }
       await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
       setState(() {
         _videoPlayerController = controller;
         _chewieController = ChewieController(
@@ -119,6 +137,15 @@ class _VVideoPlayerState extends State<VVideoPlayer> {
           looping: false,
         );
         isLoading = false;
+      });
+    } catch (_) {
+      await controller?.dispose();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        isLoading = false;
+        _errorMessage = 'Unable to load this video.';
       });
     }
   }

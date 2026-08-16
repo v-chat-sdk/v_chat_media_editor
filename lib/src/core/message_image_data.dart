@@ -4,13 +4,20 @@
 
 import 'package:v_platform/v_platform.dart';
 
+/// Serializable image source and pixel-dimension metadata.
 class MessageImageData {
+  /// Image file represented by this metadata.
   VPlatformFile fileSource;
+
+  /// Image width in pixels, or a negative value while it is unknown.
   int width;
+
+  /// Image height in pixels, or a negative value while it is unknown.
   int height;
 
-//<editor-fold desc="Data Methods">
+  //<editor-fold desc="Data Methods">
 
+  /// Creates image metadata for [fileSource].
   MessageImageData({
     required this.fileSource,
     required this.width,
@@ -34,10 +41,13 @@ class MessageImageData {
     return 'MessageImageData{ fileSource: $fileSource, width: $width, height: $height,}';
   }
 
+  /// Whether the image is backed by a local filesystem path.
   bool get isFromPath => fileSource.fileLocalPath != null;
 
+  /// Whether the image is backed by in-memory bytes.
   bool get isFromBytes => fileSource.bytes != null;
 
+  /// Returns a copy with the supplied fields replaced.
   MessageImageData copyWith({
     VPlatformFile? fileSource,
     int? width,
@@ -50,24 +60,23 @@ class MessageImageData {
     );
   }
 
+  /// Serializes the image source and dimensions to a map.
   Map<String, dynamic> toMap() {
-    return {
-      ...fileSource.toMap(),
-      'width': width,
-      'height': height,
-    };
+    return {...fileSource.toMap(), 'width': width, 'height': height};
   }
 
+  /// Restores image metadata from a serialized [map].
   factory MessageImageData.fromMap(Map<String, dynamic> map) {
     return MessageImageData(
-      fileSource: VPlatformFile.fromMap(
-        map,
-      ),
+      fileSource: VPlatformFile.fromMap(map),
       width: map['width'] as int,
       height: map['height'] as int,
     );
   }
 
+  /// Creates placeholder image metadata backed by a Picsum URL.
+  ///
+  /// [high] is retained for backward compatibility and represents the height.
   factory MessageImageData.fromFakeData({
     required int high,
     required int width,
@@ -81,5 +90,5 @@ class MessageImageData {
     );
   }
 
-//</editor-fold>
+  //</editor-fold>
 }

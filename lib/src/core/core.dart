@@ -4,3 +4,5 @@
 
 export 'media_editor_config.dart';
 export 'media_res_model.dart';
+export 'message_image_data.dart';
+export 'message_video_data.dart';

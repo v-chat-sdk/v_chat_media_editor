@@ -2,12 +2,15 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
-import 'dart:async';
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart';
 
@@ -19,7 +22,6 @@ import 'message_image_data.dart';
 abstract class VFileUtils {
   static final _fcNativeVideoThumbnail = FcNativeVideoThumbnail();
 
-
   static Future<MessageImageData?> getVideoThumb({
     required VPlatformFile fileSource,
     int maxWidth = 600,
@@ -30,57 +32,57 @@ abstract class VFileUtils {
       if (fileSource.isFromBytes || fileSource.isFromUrl) {
         return null;
       }
-      final destFile = join(
-        Directory.systemTemp.path,
-        "${DateTime.now().microsecondsSinceEpoch}.png",
-      );
+      final outputPath =
+          destFile ??
+          join(
+            Directory.systemTemp.path,
+            '${DateTime.now().microsecondsSinceEpoch}.png',
+          );
 
-      final thumbPath = await _fcNativeVideoThumbnail.getVideoThumbnail(
-        srcFile: fileSource.fileLocalPath!,
-        width: maxWidth,
-        quality: quality,
-        destFile: destFile,
-        height: maxWidth,
-      );
+      final didCreateThumbnail = await _fcNativeVideoThumbnail
+          .saveThumbnailToFile(
+            srcFile: fileSource.fileLocalPath!,
+            width: maxWidth,
+            quality: quality,
+            destFile: outputPath,
+            height: maxWidth,
+          );
 
-      if (thumbPath == false) {
+      if (!didCreateThumbnail) {
         return null;
       }
 
       final thumbImageData = await getImageInfo(
-        fileSource: VPlatformFile.fromPath(
-          fileLocalPath: destFile,
-        ),
+        fileSource: VPlatformFile.fromPath(fileLocalPath: outputPath),
       );
 
       return MessageImageData(
-        fileSource: VPlatformFile.fromPath(fileLocalPath: destFile),
+        fileSource: VPlatformFile.fromPath(fileLocalPath: outputPath),
         width: thumbImageData.image.width,
         height: thumbImageData.image.height,
       );
-    } catch (err) {
-      print(err);
+    } catch (_) {
       return null;
     }
   }
 
   static Future<int?> getVideoDurationMill(VPlatformFile file) async {
-    if (file.isFromPath) {
-      final controller = VideoPlayerController.file(
-        File(file.fileLocalPath!),
-      );
-      await controller.initialize();
-      final value = controller.value.duration.inMilliseconds;
-      controller.dispose();
-      return value;
+    if (!file.isFromPath) {
+      return null;
     }
-    return null;
+
+    final controller = VideoPlayerController.file(File(file.fileLocalPath!));
+    try {
+      await controller.initialize();
+      return controller.value.duration.inMilliseconds;
+    } finally {
+      await controller.dispose();
+    }
   }
 
-  //This is a function called "compressImage" that takes in a VPlatformFile object representing an image file and compresses it
-  // if it is larger than a certain size (specified by the "compressAt" parameter). The compression is done using the FlutterNativeImage
-  // library, which takes in the file path of the image and a quality parameter (defaulting to 50). If the resulting file is smaller than the specified size,
-  // the original file is returned. Otherwise, the compressed file is returned as a new VPlatformFile object.
+  /// Compresses path-based images larger than [compressAt] bytes.
+  ///
+  /// Unsupported platforms and failed compression return the original file.
   static Future<VPlatformFile> compressImage({
     required VPlatformFile fileSource,
     required int compressAt,
@@ -89,39 +91,49 @@ abstract class VFileUtils {
     if (!fileSource.isFromPath) {
       return fileSource;
     }
-    VPlatformFile compressedFileSource = fileSource;
     try {
-      if (compressedFileSource.fileSize > compressAt) {
-        final temp = join(
-          Directory.systemTemp.path,
-          "${DateTime.now().microsecondsSinceEpoch}",
-        );
-        final compressedFile = await FlutterImageCompress.compressAndGetFile(
-          fileSource.fileLocalPath!,
-          "$temp.jpeg",
-        );
-        if (compressedFile == null) {
-          return fileSource;
-        }
-
-        compressedFileSource =
-            VPlatformFile.fromPath(fileLocalPath: compressedFile.path);
+      if (fileSource.fileSize <= compressAt) {
+        return fileSource;
       }
-    } catch (err) {
-      print(err);
+
+      final outputPath = join(
+        Directory.systemTemp.path,
+        '${DateTime.now().microsecondsSinceEpoch}.jpeg',
+      );
+      final compressionQuality = quality.clamp(0, 100).toInt();
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        fileSource.fileLocalPath!,
+        outputPath,
+        quality: compressionQuality,
+      );
+      if (compressedFile == null) {
+        return fileSource;
+      }
+
+      return VPlatformFile.fromPath(fileLocalPath: compressedFile.path);
+    } catch (_) {
+      return fileSource;
     }
-    return compressedFileSource;
   }
 
   static Future<ImageInfo> getImageInfo({
     required VPlatformFile fileSource,
   }) async {
-    final Image image = fileSource.isFromBytes
-        ? Image.memory(Uint8List.fromList(fileSource.bytes!))
-        : Image.file(File(fileSource.fileLocalPath!));
-    final completer = Completer<ImageInfo>();
-    final listener = ImageStreamListener((info, _) => completer.complete(info));
-    image.image.resolve(const ImageConfiguration()).addListener(listener);
-    return completer.future;
+    final Uint8List imageBytes;
+    if (fileSource.isFromBytes) {
+      imageBytes = Uint8List.fromList(fileSource.bytes!);
+    } else if (fileSource.isFromPath) {
+      imageBytes = await File(fileSource.fileLocalPath!).readAsBytes();
+    } else {
+      throw UnsupportedError('Image dimensions require file bytes or a path.');
+    }
+
+    final codec = await ui.instantiateImageCodec(imageBytes);
+    try {
+      final frame = await codec.getNextFrame();
+      return ImageInfo(image: frame.image);
+    } finally {
+      codec.dispose();
+    }
   }
 }

@@ -2,6 +2,9 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -35,10 +38,7 @@ class _VPlatformCacheImageWidgetState extends State<VPlatformCacheImageWidget> {
   @override
   Widget build(BuildContext context) {
     if (widget.borderRadius != null) {
-      return ClipRRect(
-        borderRadius: widget.borderRadius!,
-        child: _getImage(),
-      );
+      return ClipRRect(borderRadius: widget.borderRadius!, child: _getImage());
     }
     return _getImage();
   }
@@ -83,9 +83,7 @@ class _VPlatformCacheImageWidgetState extends State<VPlatformCacheImageWidget> {
             imageKey = UniqueKey();
           });
         },
-        child: const Icon(
-          Icons.refresh,
-        ),
+        child: const Icon(Icons.refresh),
       ),
     );
   }

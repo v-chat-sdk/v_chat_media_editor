@@ -2,8 +2,10 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:v_platform/v_platform.dart';
 
 import '../../../../v_chat_media_editor.dart';
@@ -12,20 +14,24 @@ import '../../../core/platform_cache_image_widget.dart';
 class ImageItem extends StatelessWidget {
   final VMediaImageRes image;
   final VoidCallback onCloseClicked;
-  final Function(VMediaImageRes item) onDelete;
-  final Function(VMediaImageRes item) onCrop;
-  final Function(VMediaImageRes item) onStartDraw;
+  final ValueChanged<VMediaImageRes> onDelete;
+  final Future<void> Function(VMediaImageRes item) onCrop;
+  final Future<void> Function(VMediaImageRes item) onStartDraw;
 
-  const ImageItem(
-      {super.key,
-      required this.image,
-      required this.onCloseClicked,
-      required this.onDelete,
-      required this.onCrop,
-      required this.onStartDraw});
+  const ImageItem({
+    super.key,
+    required this.image,
+    required this.onCloseClicked,
+    required this.onDelete,
+    required this.onCrop,
+    required this.onStartDraw,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final canCrop = VPlatforms.isMobile && image.data.isFromPath;
+    final canDraw =
+        !VPlatforms.isWeb && (image.data.isFromPath || image.data.isFromBytes);
     return Column(
       children: [
         Align(
@@ -38,55 +44,38 @@ class ImageItem extends StatelessWidget {
                 IconButton(
                   iconSize: 30,
                   onPressed: onCloseClicked,
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Icons.close, color: Colors.white),
                 ),
                 Row(
                   children: [
                     IconButton(
                       iconSize: 30,
                       onPressed: () => onDelete(image),
-                      icon:  Icon(
-                        PhosphorIcons.trash(),
+                      icon: const Icon(
+                        Icons.delete_outline,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(
-                      width: 3,
-                    ),
+                    const SizedBox(width: 3),
                     IconButton(
                       iconSize: 30,
-                      onPressed: () {
-                        if (VPlatforms.isWeb) {
-                          return;
-                        }
-                        onCrop(image);
-                      },
+                      onPressed: canCrop ? () => onCrop(image) : null,
                       icon: Icon(
-                        PhosphorIcons.crop(),
-                        color: VPlatforms.isWeb ? Colors.grey : Colors.white,
+                        Icons.crop,
+                        color: canCrop ? Colors.white : Colors.grey,
                       ),
                     ),
-                    const SizedBox(
-                      width: 3,
-                    ),
+                    const SizedBox(width: 3),
                     IconButton(
                       iconSize: 30,
-                      onPressed: () {
-                        if (VPlatforms.isWeb) {
-                          return;
-                        }
-                        onStartDraw(image);
-                      },
+                      onPressed: canDraw ? () => onStartDraw(image) : null,
                       icon: Icon(
                         Icons.edit,
-                        color: VPlatforms.isWeb ? Colors.grey : Colors.white,
+                        color: canDraw ? Colors.white : Colors.grey,
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),

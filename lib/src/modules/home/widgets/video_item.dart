@@ -2,8 +2,10 @@
 // All rights reserved. Use of this source code is governed by a
 // MIT license that can be found in the LICENSE file.
 
+// Internal implementation details are not part of the exported package API.
+// ignore_for_file: public_member_api_docs
+
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../v_chat_media_editor.dart';
 import '../../../core/platform_cache_image_widget.dart';
@@ -11,8 +13,8 @@ import '../../../core/platform_cache_image_widget.dart';
 class VideoItem extends StatelessWidget {
   final VMediaVideoRes video;
   final VoidCallback onCloseClicked;
-  final Function(VMediaVideoRes item) onDelete;
-  final Function(VMediaVideoRes item) onPlayVideo;
+  final ValueChanged<VMediaVideoRes> onDelete;
+  final ValueChanged<VMediaVideoRes> onPlayVideo;
 
   const VideoItem({
     super.key,
@@ -36,29 +38,22 @@ class VideoItem extends StatelessWidget {
                 IconButton(
                   iconSize: 30,
                   onPressed: () => onCloseClicked(),
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Icons.close, color: Colors.white),
                 ),
                 Row(
                   children: [
                     IconButton(
                       iconSize: 30,
                       onPressed: () => onDelete(video),
-                      icon:  Icon(
-                        PhosphorIcons.trash(),
+                      icon: const Icon(
+                        Icons.delete_outline,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(
-                      width: 3,
-                    ),
-                    const SizedBox(
-                      width: 3,
-                    ),
+                    const SizedBox(width: 3),
+                    const SizedBox(width: 3),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -72,9 +67,7 @@ class VideoItem extends StatelessWidget {
                   source: video.data.thumbImage!.fileSource,
                 )
               else
-                Container(
-                  color: Colors.black87,
-                ),
+                Container(color: Colors.black87),
               InkWell(
                 onTap: () => onPlayVideo(video),
                 child: Row(
@@ -87,17 +80,14 @@ class VideoItem extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: Colors.black,
                       ),
-                      child:   Icon(
-                        PhosphorIcons.play (PhosphorIconsStyle.fill),
-                        color: Colors.white,
-                      ),
+                      child: Icon(Icons.play_arrow, color: Colors.white),
                     ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
-        )
+        ),
       ],
     );
   }

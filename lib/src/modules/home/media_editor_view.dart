@@ -11,10 +11,15 @@ import 'package:v_platform/v_platform.dart';
 import '../../core/core.dart';
 import 'media_editor_controller.dart';
 
+/// Full-screen editor for previewing and preparing attachment results.
 class VMediaEditorView extends StatefulWidget {
+  /// Files shown in the editor.
   final List<VPlatformFile> files;
+
+  /// Compression and thumbnail settings applied during editing.
   final VMediaEditorConfig config;
 
+  /// Creates a media editor for [files].
   const VMediaEditorView({
     super.key,
     required this.files,
@@ -30,21 +35,43 @@ class _VMediaEditorViewState extends State<VMediaEditorView> {
 
   @override
   void initState() {
-    controller = MediaEditorController(widget.files, widget.config);
     super.initState();
+    controller = MediaEditorController(widget.files, widget.config);
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
+    return ValueListenableBuilder<int>(
       valueListenable: controller,
       builder: (context, value, child) {
+        if (!controller.isLoading && controller.mediaFiles.isEmpty) {
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('No media files to edit.'),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => controller.onEmptyPress(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
         return Scaffold(
-          floatingActionButton: controller.isLoading
+          floatingActionButton:
+              controller.isLoading || controller.mediaFiles.isEmpty
               ? null
               : FloatingActionButton.small(
                   elevation: 0,
-                  onPressed: () => controller.onSubmitData(context),
+                  onPressed: controller.isCompressing
+                      ? null
+                      : () => controller.onSubmitData(context),
                   child: controller.isCompressing
                       ? const CupertinoActivityIndicator()
                       : const Icon(Icons.send),
@@ -63,14 +90,12 @@ class _VMediaEditorViewState extends State<VMediaEditorView> {
                         onCloseClicked: () => controller.onEmptyPress(context),
                         onDelete: (item) => controller.onDelete(item, context),
                         onCrop: (item) =>
-                            controller.onCrop(item as VMediaImageRes, context),
+                            controller.onCrop(item as VMediaImageRes),
                         onPlayVideo: (item) =>
                             controller.onPlayVideo(item, context),
-                        onStartDraw: (item) {
-                          if (item is VMediaVideoRes) {
-                            return controller.onStartEditVideo(item, context);
-                          } else if (item is VMediaImageRes) {
-                            return controller.onStartDraw(item, context);
+                        onStartDraw: (item) async {
+                          if (item is VMediaImageRes) {
+                            await controller.onStartDraw(item, context);
                           }
                         },
                         isProcessing: controller.isLoading,
@@ -79,17 +104,14 @@ class _VMediaEditorViewState extends State<VMediaEditorView> {
                     itemCount: controller.mediaFiles.length,
                   ),
                 ),
-                const SizedBox(
-                  height: 20,
-                ),
+                const SizedBox(height: 20),
                 SizedBox(
                   height: MediaQuery.of(context).size.height * .08,
                   child: ListView.separated(
                     padding: const EdgeInsets.all(5),
                     scrollDirection: Axis.horizontal,
-                    separatorBuilder: (context, index) => const SizedBox(
-                      width: 5,
-                    ),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 5),
                     itemBuilder: (context, index) {
                       return InkWell(
                         onTap: () {
@@ -103,7 +125,7 @@ class _VMediaEditorViewState extends State<VMediaEditorView> {
                     },
                     itemCount: controller.mediaFiles.length,
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -114,7 +136,7 @@ class _VMediaEditorViewState extends State<VMediaEditorView> {
 
   @override
   void dispose() {
-    controller.close();
+    controller.dispose();
     super.dispose();
   }
 }
