@@ -84,9 +84,8 @@ class _ImagePinterViewState extends State<ImagePinterView> {
         Uint8List.fromList(widget.platformFileSource.bytes!),
       ).image;
     } else if (widget.platformFileSource.fileLocalPath != null) {
-      image = await FileImage(
-        File(widget.platformFileSource.fileLocalPath!),
-      ).image;
+      image = await FileImage(File(widget.platformFileSource.fileLocalPath!))
+          .image;
     } else {
       return;
     }

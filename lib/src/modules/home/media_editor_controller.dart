@@ -64,14 +64,12 @@ class MediaEditorController extends ValueNotifier<int> {
 
   Future<void> onStartDraw(VBaseMediaRes item, BuildContext context) async {
     if (item is VMediaImageRes) {
-      final editedFile =
-          await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ImagePinterView(platformFileSource: item.data.fileSource),
-                ),
-              )
-              as VPlatformFile?;
+      final editedFile = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) =>
+              ImagePinterView(platformFileSource: item.data.fileSource),
+        ),
+      ) as VPlatformFile?;
       if (editedFile != null) {
         item.data.fileSource = editedFile;
       }

@@ -14,17 +14,17 @@ metadata before upload.
 
 ## Requirements
 
-- Flutter 3.44 or newer
-- Dart 3.12 or newer
-- iOS 14.0 or newer
-- macOS 11.0 or newer
+- Flutter 3.47 or newer
+- Dart 3.13 or newer
+- iOS 16.0 or newer
+- macOS 13.0 or newer
 
 ## Installation
 
 ```yaml
 dependencies:
-  v_chat_media_editor: ^3.0.0
-  v_platform: ^2.2.0
+  v_chat_media_editor: ^4.0.1
+  v_platform: ^3.0.0
 ```
 
 `v_platform` provides the `VPlatformFile` objects accepted by the editor.
