@@ -5,7 +5,7 @@
 // Internal implementation details are not part of the exported package API.
 // ignore_for_file: public_member_api_docs
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:v_platform/v_platform.dart';
 
